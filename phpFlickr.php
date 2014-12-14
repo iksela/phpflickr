@@ -496,8 +496,17 @@ if ( !class_exists('phpFlickr') ) {
 					$args["api_sig"] = $api_sig;
 				}
 
+				// support for php < 5.5
+				if (!function_exists('curl_file_create')) {
+					function curl_file_create($filename, $mimetype = '', $postname = '') {
+						return "@$filename;filename="
+							. ($postname ?: basename($filename))
+							. ($mimetype ? ";type=$mimetype" : '');
+					}
+				}
+
 				$photo = realpath($photo);
-				$args['photo'] = '@' . $photo;
+				$args['photo'] = curl_file_create($photo);
 
 
 				$curl = curl_init($this->upload_endpoint);
@@ -505,6 +514,7 @@ if ( !class_exists('phpFlickr') ) {
 				curl_setopt($curl, CURLOPT_POSTFIELDS, $args);
 				curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 				curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
 				$response = curl_exec($curl);
 				if ($response === false) {
 					var_dump(curl_error($curl));
